@@ -1,0 +1,6 @@
+<launch>
+
+<node pkg="aeb_control" type="aeb_control_node" name="abe_control_node" output="screen" />
+<node pkg="aeb_control" type="bool_pub_node" name="bool_pub_node" output="screen" />
+
+</launch>
