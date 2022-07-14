@@ -122,11 +122,10 @@ void *readserial_thread(void *pt)
 			read_serial_data = insert_buf;
 			//printf("%x\n",read_serial_data);
 			if(read_serial_data == '#' )         // 첫번째 문자 입력..
-            {
+           		 {
 				read_buf[Count] = read_serial_data ;
 				Count++ ;
-
-            }   
+            		 }   
             
 			else if( (read_serial_data == 'I' ) || (read_serial_data == 'F' ))
 			{
@@ -188,6 +187,7 @@ void crc_check(char crc[])
 	{
 		crc_data += copy_readbuf[i];
 	}
+	
 	m_crc.data = crc_data;
 	
 	if((crc[1] == m_crc.bytedata[1]) && (crc[2] == m_crc.bytedata[0]))
