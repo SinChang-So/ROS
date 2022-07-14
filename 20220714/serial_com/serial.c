@@ -1,18 +1,4 @@
 /*******************************************************************************
-
- *  Functions
-
- *******************************************************************************
-
- */
-
-/*******************************************************************************
-
- *  INCLUDE #define POLYNORMIAL 0xA001FILES
-
- *******************************************************************************
-
- */
 #include <stdio.h>
 #include <stdlib.h>
 //multi thread
@@ -28,13 +14,6 @@
 #include <errno.h> // Error integer and strerror() function
 #include <unistd.h> // write(), read(), close()
 
-/*******************************************************************************
-
- *  Defines
-
- *******************************************************************************
-
- */
 #define _USE_MATH_DEFINES
 typedef unsigned char BYTE;
 #define DEG2RAD(x) (M_PI/180.0*(x) )
@@ -43,23 +22,15 @@ typedef unsigned char BYTE;
 #define RPS2RPM(x) ((x)*60)
 
 union
-
 {
-
     float data ;
-
     char  bytedata[4];
-
 } m_robot_speed;
 
 union
-
 {
-
     short data ;
-
     char  bytedata[2];
-
 } m_robot_angle , m_crc;
 #define DEG2RAD(x) (M_PI/180.0*(x) )
 #define RAD2DEG(x) ((x)*180.0/M_PI)
@@ -74,9 +45,6 @@ union
 
 #define MAX_ROBOT_SPEED 60
 #define MIN_ROBOT_SPEED -60
-
-#define UDR0 0x0C
-#define UCSR0A 0x00
 
 int robot_speed = 0;
 int steer_angle = 0;
@@ -144,7 +112,7 @@ void *readserial_thread(void *pt)
     unsigned char insert_buf;
     unsigned char read_serial_data;
     unsigned char read_serial_data_old;
-    int g_ucCmdATCount = 0;
+    int Count = 0;
     //int crc[2] = {0,};
     
     while(1)
@@ -155,11 +123,8 @@ void *readserial_thread(void *pt)
 			//printf("%x\n",read_serial_data);
 			if(read_serial_data == '#' )         // 첫번째 문자 입력..
             {
-				// start_byte = '#';
-				// g_ucCmdATCount = 0 ;
-				read_buf[g_ucCmdATCount] = read_serial_data ;
-				g_ucCmdATCount++ ;
-				//printf("# Received\n");
+				read_buf[Count] = read_serial_data ;
+				Count++ ;
 
             }   
             
@@ -168,53 +133,46 @@ void *readserial_thread(void *pt)
 				if(read_serial_data_old =='#')
 				{                      
 					read_buf[0] = '#' ;
-					g_ucCmdATCount = 1 ;
-					read_buf[g_ucCmdATCount] = read_serial_data ;
-					g_ucCmdATCount++ ;
-					/*if(read_serial_data == 'F')
-					//printf("F Received\n");
-					else
-					//printf("I Received \n");*/
+					Count = 1 ;
+					read_buf[Count] = read_serial_data ;
+					Count++ ;
 				}				                  
 			}
 			
-			else if(g_ucCmdATCount >= 2 && g_ucCmdATCount <= 5){
-					read_buf[g_ucCmdATCount] = read_serial_data ;
-					g_ucCmdATCount++ ;
-					//printf("Byte data Received\n");
+			else if(TCount >= 2 && Count <= 5){
+					read_buf[Count] = read_serial_data ;
+					Count++ ;
 			}
 			
-			else if(g_ucCmdATCount >= 6 && g_ucCmdATCount <= 7){
-			read_buf[g_ucCmdATCount] = read_serial_data ;
+			else if(Count >= 6 && Count <= 7){
+			read_buf[Count] = read_serial_data ;
 
-					g_ucCmdATCount++ ;
+					Count++ ;
 
 					//printf("crc data Received\n");
 			}
 			
 			else if( read_serial_data == '*' ) // 끝문자 검색
 			{
-				read_buf[g_ucCmdATCount] = read_serial_data ;
-				g_ucCmdATCount++ ;
+				read_buf[Count] = read_serial_data ;
+				Count++ ;
 				if( (read_buf[0] == '#' ) && (read_buf[1] == 'I' ))          // 첫번째 문자 검색, data accepted.. '#' + 'S' + 2byte+ 4 byte + '*'
 
 				{
-					memcpy(copy_readbuf, read_buf, g_ucCmdATCount) ;
+					memcpy(copy_readbuf, read_buf, Count) ;
 					
-					//read_buf[g_ucCmdATCount] = read_serial_data ;
 					printf("Received Data:%x %x %x %x %x %x %x %x %x     ", copy_readbuf[0],copy_readbuf[1],copy_readbuf[2],copy_readbuf[3],copy_readbuf[4],read_buf[5],copy_readbuf[6],copy_readbuf[7],copy_readbuf[8]);
 					crc[1] = copy_readbuf[6];
 					crc[2] = copy_readbuf[7];
 					
 					crc_check(crc);
-					//g_ucCmdATCount++ ;
 				}
-				g_ucCmdATCount = 0 ;
+				Count = 0 ;
 			}                  
 			else
 			{
-				read_buf[g_ucCmdATCount] = read_serial_data ;
-				g_ucCmdATCount++ ;
+				read_buf[Count] = read_serial_data ;
+				Count++ ;
 			}
 			
 			read_serial_data_old =  read_serial_data;
@@ -260,87 +218,46 @@ void send_serial_data(void)
 {
 
     unsigned short protocal_crc16;
-
-	
-
     protocal_test[0] = '#';
-
     protocal_test[1] = 's';
-
     protocal_test[2] = m_robot_angle.bytedata[0];
-
     protocal_test[3] = m_robot_angle.bytedata[1];
-
     protocal_test[4] = m_robot_speed.bytedata[0];
-
     protocal_test[5] = m_robot_speed.bytedata[1];
-
     protocal_test[6] = m_robot_speed.bytedata[2];
-
     protocal_test[7] = m_robot_speed.bytedata[3];
-
     protocal_test[8] = '*';
-
     write_serial(protocal_test,9);
-
 }
 
-
 int main(void)
-
 {
-
   uart_fd = init_serial_port();
-
   //memset(&read_buf, '\0', sizeof(read_buf));
-
   //unsigned char msg[] = { 'H', 'e', 'l', 'l', 'o', '\r' };
-
   //write(uart_fd , msg, sizeof(msg));
-
   // Normally you wouldn't do this memset() call, but since we will just receive
-
   // ASCII data for this example, we'll set everything to 0 so we can
-
   // call printf() easily.
-
   // Read bytes. The behaviour of read() (e.g. does it block?,
-
   // how long does it block for?) depends on the configuration
-
   // settings above, specifically VMIN and VTIME
-
   pthread_t id_1;
-
   int ret1=pthread_create(&id_1,NULL,readserial_thread,NULL);
-
   // Here we assume we received ASCII data, but you might be sending raw bytes (in that case, don't try and
-
   // print it to the screen like this!)
-
   m_robot_angle.data = 0;
-
   m_robot_speed.data = 0.00;
-
   while(1)
-
   {
-
       //m_robot_angle.data--;
-
       //m_robot_speed.data -=0.01;
-
       //send_serial_data();
-
       //printf("%x %x  %x %x  %x %x\n",m_robot_angle.bytedata[0],m_robot_angle.bytedata[1], m_robot_speed.bytedata[0], m_robot_speed.bytedata[1],m_robot_speed.bytedata[2], m_robot_speed.bytedata[3] );
       //printf("Received Data: %x %x %x %x %x %x %x %x %x %x\n", read_buf[0],read_buf[1],read_buf[2],read_buf[3],read_buf[4],read_buf[5],read_buf[6],read_buf[7],read_buf[8],read_buf[9]);
-
       sleep(1);
-
   }
-
   close(uart_fd);
-
   return 0;
 
 }
